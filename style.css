@@ -1,0 +1,137 @@
+package apiary.servlet;
+
+import apiary.util.DBConnection;
+
+import java.io.IOException;
+import java.sql.*;
+import java.util.*;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
+import jakarta.servlet.annotation.WebServlet;
+
+/**
+ * OrderServlet.java
+ * GET  /orders                — lists all orders with customer names
+ * POST /orders?action=update  — updates order status (admin only)
+ * POST /orders?action=add     — creates a new order (admin only)
+ */
+@WebServlet("/orders")
+public class OrderServlet extends HttpServlet {
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse res)
+            throws ServletException, IOException {
+
+        if (req.getSession(false) == null || req.getSession(false).getAttribute("userId") == null) {
+            res.sendRedirect("login.jsp");
+            return;
+        }
+
+        // Load orders
+        String orderSql = "SELECT o.order_id, "
+                        + "       CONCAT(c.first_name, ' ', c.last_name) AS customer_name, "
+                        + "       o.order_date, o.total_amount, o.order_status "
+                        + "FROM Orders o "
+                        + "JOIN Customers c ON o.customer_id = c.customer_id "
+                        + "ORDER BY o.order_date DESC";
+
+        List<Map<String, Object>> orders = new ArrayList<>();
+
+        try (Connection conn = DBConnection.getConnection();
+             Statement  stmt = conn.createStatement();
+             ResultSet  rs   = stmt.executeQuery(orderSql)) {
+
+            while (rs.next()) {
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("order_id",      rs.getInt("order_id"));
+                row.put("customer_name", rs.getString("customer_name"));
+                row.put("order_date",    rs.getDate("order_date"));
+                row.put("total_amount",  rs.getBigDecimal("total_amount"));
+                row.put("order_status",  rs.getString("order_status"));
+                orders.add(row);
+            }
+
+        } catch (SQLException e) {
+            throw new ServletException("Error loading orders.", e);
+        }
+
+        // Load customers for the add order dropdown
+        List<Map<String, Object>> customers = new ArrayList<>();
+        String custSql = "SELECT customer_id, CONCAT(first_name, ' ', last_name) AS customer_name "
+                       + "FROM Customers ORDER BY last_name";
+
+        try (Connection conn = DBConnection.getConnection();
+             Statement  stmt = conn.createStatement();
+             ResultSet  rs   = stmt.executeQuery(custSql)) {
+
+            while (rs.next()) {
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("customer_id",   rs.getInt("customer_id"));
+                row.put("customer_name", rs.getString("customer_name"));
+                customers.add(row);
+            }
+
+        } catch (SQLException e) {
+            throw new ServletException("Error loading customers.", e);
+        }
+
+        req.setAttribute("orders",    orders);
+        req.setAttribute("customers", customers);
+        req.getRequestDispatcher("orders.jsp").forward(req, res);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse res)
+            throws ServletException, IOException {
+
+        HttpSession session = req.getSession(false);
+        if (session == null || !"admin".equals(session.getAttribute("role"))) {
+            res.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
+        String action = req.getParameter("action");
+
+        if ("update".equals(action)) {
+            String sql = "UPDATE Orders SET order_status = ? WHERE order_id = ?";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, req.getParameter("order_status"));
+                ps.setInt(2,    Integer.parseInt(req.getParameter("order_id")));
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                throw new ServletException("Error updating order status.", e);
+            }
+
+        } else if ("add".equals(action)) {
+            String customerIdStr  = req.getParameter("customer_id");
+            String orderDate      = req.getParameter("order_date");
+            String totalAmountStr = req.getParameter("total_amount");
+            String orderStatus    = req.getParameter("order_status");
+
+            if (customerIdStr == null || orderDate == null || orderDate.trim().isEmpty()) {
+                req.setAttribute("error", "Customer and order date are required.");
+                doGet(req, res);
+                return;
+            }
+
+            String sql = "INSERT INTO Orders (customer_id, order_date, total_amount, order_status) "
+                       + "VALUES (?, ?, ?, ?)";
+
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1,    Integer.parseInt(customerIdStr));
+                ps.setDate(2,   java.sql.Date.valueOf(orderDate));
+                ps.setObject(3, (totalAmountStr != null && !totalAmountStr.isEmpty())
+                                ? new java.math.BigDecimal(totalAmountStr) : null);
+                ps.setString(4, (orderStatus != null && !orderStatus.isEmpty())
+                                ? orderStatus : "Pending");
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                throw new ServletException("Error creating order.", e);
+            }
+        }
+
+        res.sendRedirect("orders");
+    }
+}

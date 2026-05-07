@@ -1,0 +1,86 @@
+<%-- dashboard.jsp --%>
+<%@ page contentType="text/html;charset=UTF-8" %>
+<%
+  if (session.getAttribute("userId") == null) {
+      response.sendRedirect("login.jsp");
+      return;
+  }
+  String firstName = (String) session.getAttribute("firstName");
+
+  String statHives       = request.getAttribute("statHives")       != null ? request.getAttribute("statHives").toString()       : "3";
+  String statInspections = request.getAttribute("statInspections") != null ? request.getAttribute("statInspections").toString() : "3";
+  String statProducts    = request.getAttribute("statProducts")    != null ? request.getAttribute("statProducts").toString()    : "4";
+  String statOrders      = request.getAttribute("statOrders")      != null ? request.getAttribute("statOrders").toString()      : "2";
+%>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard – Sunny Day Apiary</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <%@ include file="navbar.jsp" %>
+  <main class="container">
+    <h1>Welcome, <%= firstName %>!</h1>
+
+    <div class="stat-row">
+      <div class="stat-card">
+        <span class="stat-card-icon">🐝</span>
+        <div class="stat-card-body">
+          <span class="stat-card-value"><%= statHives %></span>
+          <span class="stat-card-label">Active Hives</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card-icon">📋</span>
+        <div class="stat-card-body">
+          <span class="stat-card-value"><%= statInspections %></span>
+          <span class="stat-card-label">Inspections Logged</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card-icon">🍯</span>
+        <div class="stat-card-body">
+          <span class="stat-card-value"><%= statProducts %></span>
+          <span class="stat-card-label">Products in Stock</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card-icon">📦</span>
+        <div class="stat-card-body">
+          <span class="stat-card-value"><%= statOrders %></span>
+          <span class="stat-card-label">Customer Orders</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <a href="hives" class="card">
+        <span class="card-icon">🐝</span>
+        <span>Hives</span>
+      </a>
+      <a href="inspections" class="card">
+        <span class="card-icon">📋</span>
+        <span>Inspections</span>
+      </a>
+      <a href="feeding" class="card">
+        <span class="card-icon">🌿</span>
+        <span>Feeding</span>
+      </a>
+      <a href="products" class="card">
+        <span class="card-icon">🍯</span>
+        <span>Products</span>
+      </a>
+      <a href="orders" class="card">
+        <span class="card-icon">📦</span>
+        <span>Orders</span>
+      </a>
+      <a href="charts" class="card">
+        <span class="card-icon">📊</span>
+        <span>Charts</span>
+      </a>
+    </div>
+  </main>
+  <footer class="footer">Sunny Day Apiary Management System &copy; 2025</footer>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<%-- feeding.jsp --%>
+<%@ page contentType="text/html;charset=UTF-8" import="java.util.*" %>
+<%
+  if (session.getAttribute("userId") == null) {
+      response.sendRedirect("login.jsp");
+      return;
+  }
+  String role = (String) session.getAttribute("role");
+  List<Map<String,Object>> feedings = (List<Map<String,Object>>) request.getAttribute("feedings");
+  List<Map<String,Object>> hives    = (List<Map<String,Object>>) request.getAttribute("hives");
+  String error = (String) request.getAttribute("error");
+%>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Feeding Schedule – Sunny Day Apiary</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <%@ include file="navbar.jsp" %>
+  <main class="container">
+    <h1>Feeding Schedule</h1>
+
+    <% if (error != null) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Hive</th>
+          <th>Date</th>
+          <th>Feed Type</th>
+          <th>Amount (lbs)</th>
+          <th>Notes</th>
+          <% if ("admin".equals(role)) { %><th>Delete</th><% } %>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (feedings != null && !feedings.isEmpty()) {
+             for (Map<String,Object> f : feedings) { %>
+        <tr>
+          <td><%= f.get("schedule_id") %></td>
+          <td><%= f.get("hive_name")   %></td>
+          <td><%= f.get("feed_date")   %></td>
+          <td><%= f.get("feed_type")   %></td>
+          <td><%= f.get("amount_lbs") != null ? f.get("amount_lbs") : "—" %></td>
+          <td><%= f.get("notes")      != null ? f.get("notes")      : "—" %></td>
+          <% if ("admin".equals(role)) { %>
+          <td>
+            <form method="post" action="feeding"
+                  onsubmit="return confirm('Delete this feeding record?');">
+              <input type="hidden" name="action"      value="delete">
+              <input type="hidden" name="schedule_id" value="<%= f.get("schedule_id") %>">
+              <button type="submit" class="btn-delete">&#128465; Delete</button>
+            </form>
+          </td>
+          <% } %>
+        </tr>
+        <% } } else { %>
+        <tr><td colspan="7" style="text-align:center; color:#888; padding:20px;">No feeding entries yet.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+
+    <% if ("admin".equals(role)) { %>
+    <section class="form-section">
+      <div class="form-section-header">
+        <h2>Log New Feeding</h2>
+        <button type="button" class="btn-toggle" onclick="toggleForm('feedingForm', this)">+ Add New</button>
+      </div>
+      <div id="feedingForm" class="form-body" style="display:none;">
+        <form method="post" action="feeding">
+          <div class="form-row">
+            <label>Hive *
+              <select name="hive_id" required>
+                <% if (hives != null) { for (Map<String,Object> h : hives) { %>
+                  <option value="<%= h.get("hive_id") %>"><%= h.get("hive_name") %></option>
+                <% } } %>
+              </select>
+            </label>
+            <label>Date *
+              <input type="date" name="feed_date" required>
+            </label>
+          </div>
+          <div class="form-row">
+            <label>Feed Type *
+              <select name="feed_type" required>
+                <option value="Sugar Syrup">Sugar Syrup</option>
+                <option value="Pollen Patty">Pollen Patty</option>
+                <option value="Fondant">Fondant</option>
+                <option value="Dry Sugar">Dry Sugar</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+            <label>Amount (lbs)
+              <input type="number" name="amount_lbs" step="0.01" min="0">
+            </label>
+          </div>
+          <label>Notes
+            <textarea name="notes" rows="3"></textarea>
+          </label>
+          <button type="submit" class="btn-primary">Save Feeding</button>
+        </form>
+      </div>
+    </section>
+    <% } %>
+  </main>
+  <footer class="footer">Sunny Day Apiary Management System &copy; 2025</footer>
+
+  <script>
+    function toggleForm(id, btn) {
+      var el = document.getElementById(id);
+      if (el.style.display === 'none') {
+        el.style.display = 'block';
+        btn.innerHTML = '&#8722; Cancel';
+      } else {
+        el.style.display = 'none';
+        btn.innerHTML = '+ Add New';
+      }
+    }
+  </script>
+</body>
+</html>

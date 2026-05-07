@@ -1,0 +1,115 @@
+<%-- hives.jsp --%>
+<%@ page contentType="text/html;charset=UTF-8" import="java.util.*" %>
+<%
+  if (session.getAttribute("userId") == null) {
+      response.sendRedirect("login.jsp");
+      return;
+  }
+  String role = (String) session.getAttribute("role");
+  List<Map<String,Object>> hives = (List<Map<String,Object>>) request.getAttribute("hives");
+  String error = (String) request.getAttribute("error");
+%>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hives – Sunny Day Apiary</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <%@ include file="navbar.jsp" %>
+  <main class="container">
+    <h1>Hive Management</h1>
+
+    <% if (error != null) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Location</th>
+          <th>Queen Age (yrs)</th>
+          <th>Status</th>
+          <th>Install Date</th>
+          <% if ("admin".equals(role)) { %><th>Delete</th><% } %>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (hives != null) { for (Map<String,Object> h : hives) { %>
+        <tr>
+          <td><%= h.get("hive_id")      %></td>
+          <td><%= h.get("hive_name")    %></td>
+          <td><%= h.get("location")     %></td>
+          <td><%= h.get("queen_age")    %></td>
+          <td><span class="badge badge-<%= h.get("status") %>"><%= h.get("status") %></span></td>
+          <td><%= h.get("install_date") %></td>
+          <% if ("admin".equals(role)) { %>
+          <td>
+            <form method="post" action="hives"
+                  onsubmit="return confirm('Delete <%= h.get("hive_name") %>? This will also remove its inspections and feeding records.');">
+              <input type="hidden" name="action"  value="delete">
+              <input type="hidden" name="hive_id" value="<%= h.get("hive_id") %>">
+              <button type="submit" class="btn-delete">&#128465; Delete</button>
+            </form>
+          </td>
+          <% } %>
+        </tr>
+        <% } } %>
+      </tbody>
+    </table>
+
+    <% if ("admin".equals(role)) { %>
+    <section class="form-section">
+      <div class="form-section-header">
+        <h2>Add New Hive</h2>
+        <button type="button" class="btn-toggle" onclick="toggleForm('hiveForm', this)">+ Add New</button>
+      </div>
+      <div id="hiveForm" class="form-body" style="display:none;">
+        <form method="post" action="hives">
+          <div class="form-row">
+            <label>Hive Name *
+              <input type="text" name="hive_name" required>
+            </label>
+            <label>Location
+              <input type="text" name="location">
+            </label>
+          </div>
+          <div class="form-row">
+            <label>Queen Age (years)
+              <input type="number" name="queen_age" min="0">
+            </label>
+            <label>Status
+              <select name="status">
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="queenless">Queenless</option>
+              </select>
+            </label>
+            <label>Install Date *
+              <input type="date" name="install_date" required>
+            </label>
+          </div>
+          <button type="submit" class="btn-primary">Add Hive</button>
+        </form>
+      </div>
+    </section>
+    <% } %>
+  </main>
+  <footer class="footer">Sunny Day Apiary Management System &copy; 2025</footer>
+
+  <script>
+    function toggleForm(id, btn) {
+      var el = document.getElementById(id);
+      if (el.style.display === 'none') {
+        el.style.display = 'block';
+        btn.innerHTML = '&#8722; Cancel';
+      } else {
+        el.style.display = 'none';
+        btn.innerHTML = '+ Add New';
+      }
+    }
+  </script>
+</body>
+</html>

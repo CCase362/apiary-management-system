@@ -1,0 +1,16 @@
+<%-- navbar.jsp  –  include this in every page --%>
+<%
+  String navUri = request.getRequestURI();
+%>
+<nav class="navbar">
+  <a href="dashboard.jsp" class="nav-brand">&#127855; Sunny Day Apiary</a>
+  <a href="dashboard.jsp" class="<%= navUri.contains("dashboard") ? "active" : "" %>">Dashboard</a>
+  <a href="hives"         class="<%= navUri.contains("hives")     ? "active" : "" %>">Hives</a>
+  <a href="inspections"   class="<%= navUri.contains("inspections") ? "active" : "" %>">Inspections</a>
+  <a href="products"      class="<%= navUri.contains("products")  ? "active" : "" %>">Products</a>
+  <a href="orders"        class="<%= navUri.contains("orders")    ? "active" : "" %>">Orders</a>
+  <% if ("admin".equals(session.getAttribute("role"))) { %>
+    <a href="admin.jsp" class="<%= navUri.contains("admin") ? "active" : "" %>">Admin</a>
+  <% } %>
+  <a href="logout" class="nav-logout">Logout</a>
+</nav>
